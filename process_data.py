@@ -4,6 +4,7 @@ import torch_geometric
 # from torch_geometric import Data
 from tqdm import tqdm
 from torch_geometric.data import HeteroData
+import pandas
 
 def flatten_dataset(file_path, outfile_users, outfile_markets, outfile_positions):
     with open(file_path, 'r') as file:
@@ -32,7 +33,8 @@ def flatten_dataset(file_path, outfile_users, outfile_markets, outfile_positions
         output_markets.append({
             "user_id": pos["user"]["id"],
             # "position_id": pos["id"],
-            "market_id": pos["market"]["id"]
+            "market_id": pos["market"]["id"],
+            "market_price": pos["market"]["priceOrderbook"]
         })
 
         output_positions.append({
@@ -52,7 +54,6 @@ def flatten_dataset(file_path, outfile_users, outfile_markets, outfile_positions
         json.dump(output_positions, f)
 
 def create_pyg_dataset(users_path, markets_path, positions_path):
-    import pandas
     users_df = pandas.read_json(users_path)
     markets_df = pandas.read_json(markets_path)
     positions_df = pandas.read_json(positions_path)
@@ -67,6 +68,7 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
     df = pandas.merge(users_df, unique_user_ids, left_on='user_id', right_on='user_id', how='left')
 
     unique_markets = markets_df['market_id'].unique()
+    # print("Markets", unique_markets)
     unique_market_ids = pandas.DataFrame(data={
         'market_id': unique_markets,
         'market_index': pandas.RangeIndex(len(unique_markets)),
@@ -101,9 +103,9 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
     users = df[["user_index", "lastTradedTimestamp", "user_creationTimestamp", "collateralVolume", "numTrades", "scaledProfit"]]
     users = users.groupby("user_index").agg("mean")
 
-    markets = markets_df[["market_index", "user_id"]]
+    markets = markets_df[["market_index", "user_id", "market_price"]]
     # get the number of unique users to be the feature for markets
-    markets = markets.groupby("market_index").agg(lambda x: len(set(x)))
+    markets = markets.groupby("market_index").agg({"user_id": lambda x: len(set(x)), "market_price": "mean"})
 
     positions = positions_df[["position_index", "netValue", "feesPaid", "netQuantity"]]
     positions = positions.groupby("position_index").agg("mean")
@@ -114,7 +116,7 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
     data = HeteroData()
     # shape [num unique users, num user features = 5]
     data['user'].x = torch.from_numpy(users.values)
-    # shape [num_unique_markets, num market features = 1 (number of unique users betting in it currently)]
+    # shape [num_unique_markets, num market features = 2 (number of unique users betting in it currently, ave market price)]
     data['market'].x = torch.from_numpy(markets.values)
     # shape [num_unique positions, num position features = 3]
     data['position'].x = torch.from_numpy(positions.values)
