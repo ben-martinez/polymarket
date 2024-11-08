@@ -128,7 +128,7 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
     """
         HeteroData(
       user={ x=[10, 5] },
-      market={ x=[91, 1] },
+      market={ x=[91, 2] },
       position={ x=[100, 3] },
       (user, bets, position)={ edge_index=[2, 100] },
       (position, active, market)={ edge_index=[2, 100] }
