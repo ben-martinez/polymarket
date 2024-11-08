@@ -61,12 +61,11 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
 
     # map each node type id to a new id (0 to num_unique_<node_type>)
     unique_users = users_df["user_id"].unique()
-    # print(unique_users)
     unique_user_ids = pandas.DataFrame(data={
         'user_id': unique_users,
         'user_index': pandas.RangeIndex(len(unique_users)),
     })
-    df = pandas.merge(users_df, unique_user_ids, left_on='user_id', right_on='user_id', how='left')
+    df = users_df.join(unique_user_ids.set_index('user_id'), on='user_id', how='left')
 
     unique_markets = markets_df['market_id'].unique()
     # print("Markets", unique_markets)
@@ -74,16 +73,16 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
         'market_id': unique_markets,
         'market_index': pandas.RangeIndex(len(unique_markets)),
     })
-    df = pandas.merge(df, unique_market_ids, left_on='market_id', right_on='market_id', how='left')
-    markets_df = pandas.merge(markets_df, unique_market_ids, left_on='market_id', right_on='market_id', how='left')
+    df = df.join(unique_market_ids.set_index('market_id'), on='market_id', how='left')
+    markets_df = markets_df.join(unique_market_ids.set_index('market_id'), on='market_id', how='left')
 
     unique_positions = positions_df['position_id'].unique()
     unique_position_ids = pandas.DataFrame(data={
         'position_id': unique_positions,
         'position_index': pandas.RangeIndex(len(unique_positions)),
     })
-    df = pandas.merge(df, unique_position_ids, left_on='position_id', right_on='position_id', how='left')
-    positions_df = pandas.merge(positions_df, unique_position_ids, left_on='position_id', right_on='position_id', how='left')
+    df = df.join(unique_position_ids.set_index('position_id'), on='position_id', how='left')
+    positions_df = positions_df.join(unique_position_ids.set_index('position_id'), on='position_id', how='left')
 
     # shape of [2, num_edges]
     edge_index_users_to_position = []
