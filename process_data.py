@@ -139,9 +139,7 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
 
     transform = T.RandomNodeSplit(
         num_val=0.2,
-        num_test=0.2,
-        # the ground truth label. default is y
-        key=""
+        num_test=0.2
     )
     train_data, val_data, test_data = transform(data)
 
