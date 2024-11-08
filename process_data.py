@@ -149,7 +149,7 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
     return data, train_data, val_data, test_data
 
 # Initial data pulled from the API
-file_path = "query_1.json"
+file_path = "100_market_positions.json"
 
 users_path = "users.json"
 markets_path = "markets.json"
