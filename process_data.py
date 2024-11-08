@@ -4,6 +4,7 @@ import torch_geometric
 # from torch_geometric import Data
 from tqdm import tqdm
 from torch_geometric.data import HeteroData
+import torch_geometric.transforms as T
 import pandas
 
 def flatten_dataset(file_path, outfile_users, outfile_markets, outfile_positions):
@@ -133,7 +134,19 @@ def create_pyg_dataset(users_path, markets_path, positions_path):
       (user, bets, position)={ edge_index=[2, 100] },
       (position, active, market)={ edge_index=[2, 100] }
     )"""
-    return data
+    # Reference: https://medium.com/@pytorch_geometric/link-prediction-on-heterogeneous-graphs-with-pyg-6d5c29677c70
+    # reference: https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.transforms.NodePropertySplit.html
+    # Split into training, validation, test nodes
+
+    transform = T.RandomNodeSplit(
+        num_val=0.2,
+        num_test=0.2,
+        # the ground truth label. default is y
+        key=""
+    )
+    train_data, val_data, test_data = transform(data)
+
+    return data, train_data, val_data, test_data
 
 # Initial data pulled from the API
 file_path = "query_1.json"
